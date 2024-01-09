@@ -1,5 +1,7 @@
-#[macro_use] extern crate log;
-#[macro_use] extern crate clap;
+#[macro_use]
+extern crate log;
+#[macro_use]
+extern crate clap;
 
 mod blib;
 
@@ -7,7 +9,7 @@ use blib::handlers::get_routes;
 use chrono;
 use clap::Parser;
 use configparser::ini::Ini;
-use minijinja::{Environment, path_loader};
+use minijinja::{path_loader, Environment};
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
@@ -21,11 +23,11 @@ use tokio::net::TcpListener;
 ]
 struct Args {
     /// The path to the config file
-    #[arg(short, long, default_value="/etc/rbunny.ini")]
+    #[arg(short, long, default_value = "/etc/rbunny.ini")]
     config: String,
 
     /// Turn on debug output
-    #[arg(short='D', long)]
+    #[arg(short = 'D', long)]
     debug: bool,
 }
 
@@ -76,29 +78,27 @@ fn setup_logging(args: &Args) {
 
 fn get_config(path: &str) -> Arc<Ini> {
     let mut conf = Ini::new();
-    conf.load(path).expect(&format!("Failed to load config at {}", path));
+    conf.load(path)
+        .expect(&format!("Failed to load config at {}", path));
 
     return Arc::new(conf);
 }
 
 async fn get_listener(conf: Arc<Ini>) -> TcpListener {
-    let lconf = conf.get("main", "bind_addr").unwrap() +
-        ":" + conf.get("main", "bind_port").unwrap().as_str();
+    let lconf = conf.get("main", "bind_addr").unwrap()
+        + ":"
+        + conf.get("main", "bind_port").unwrap().as_str();
     let listener = TcpListener::bind(&lconf).await.unwrap();
 
     return listener;
 }
 
-
 fn load_templates(conf: Arc<Ini>) -> Environment<'static> {
     let mut env = Environment::new();
-    env.set_loader(
-        path_loader(&conf.get("main", "tpl_dir").unwrap())
-    );
+    env.set_loader(path_loader(&conf.get("main", "tpl_dir").unwrap()));
 
     return env;
 }
-
 
 #[tokio::main]
 async fn main() {

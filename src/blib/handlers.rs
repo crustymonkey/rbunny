@@ -1,17 +1,14 @@
 use anyhow::{anyhow, Result};
 use axum::{
     extract::{Query, State},
-    http::{StatusCode, header},
-    response::{Html, Json, IntoResponse, Redirect},
+    http::{header, StatusCode},
+    response::{Html, IntoResponse, Json, Redirect},
     routing::get,
     Router,
 };
 use configparser::ini::Ini;
-use minijinja::{Environment, context};
-use std::{
-    collections::HashMap,
-    sync::Arc,
-};
+use minijinja::{context, Environment};
+use std::{collections::HashMap, sync::Arc};
 use urlencoding::encode;
 
 // Shortcut typemap
@@ -23,9 +20,8 @@ struct HState {
     tpls: Arc<Environment<'static>>,
 }
 
-
 pub fn get_routes(ini: Arc<Ini>, env: Arc<Environment<'static>>) -> Router {
-    let state = Arc::new( HState {
+    let state = Arc::new(HState {
         ini: ini.clone(),
         tpls: env.clone(),
     });
@@ -45,18 +41,15 @@ pub fn get_routes(ini: Arc<Ini>, env: Arc<Environment<'static>>) -> Router {
  * The handlers for the different routes
  */
 async fn index(State(state): State<Arc<HState>>) -> impl IntoResponse {
-    let tpl = state.tpls.get_template("index.html")
+    let tpl = state
+        .tpls
+        .get_template("index.html")
         .expect("Failed to load template list.html");
 
-    return Html(
-        tpl.render(context!()).unwrap(),
-    );
+    return Html(tpl.render(context!()).unwrap());
 }
 
-async fn search(
-    Query(params): Query<Smap>,
-    State(state): State<Arc<HState>>
-) -> impl IntoResponse {
+async fn search(Query(params): Query<Smap>, State(state): State<Arc<HState>>) -> impl IntoResponse {
     let query = match params.get("q") {
         Some(q) => q,
         None => {
@@ -74,14 +67,10 @@ async fn search(
 
     if cmd != "main" && !map.contains_key(cmd) {
         // Default to a google search
-        return Redirect::temporary(
-            &process_tpl_url("g", map, &parts[..]).unwrap(),
-        );
+        return Redirect::temporary(&process_tpl_url("g", map, &parts[..]).unwrap());
     } else if cmd == "main" {
         // Default to a google search as this is an invalid (reserved) command
-        return Redirect::temporary(
-            &process_tpl_url("g", map, &parts[..]).unwrap(),
-        );
+        return Redirect::temporary(&process_tpl_url("g", map, &parts[..]).unwrap());
     }
 
     if parts.len() == 1 {
@@ -93,9 +82,7 @@ async fn search(
             return Redirect::temporary(map[cmd]["url_fallback"].as_ref().unwrap());
         } else {
             // This is just a 1 word search, default to a google search
-            return Redirect::temporary(
-                &process_tpl_url("g", map, &parts[..]).unwrap(),
-            );
+            return Redirect::temporary(&process_tpl_url("g", map, &parts[..]).unwrap());
         }
     }
 
@@ -112,11 +99,14 @@ async fn search(
 }
 
 async fn list(State(state): State<Arc<HState>>) -> impl IntoResponse {
-    let tpl = state.tpls.get_template("list.html")
+    let tpl = state
+        .tpls
+        .get_template("list.html")
         .expect("Failed to load template list.html");
 
     return Html(
-        tpl.render(context!(map => get_filtered_map(state.ini.get_map_ref()))).unwrap(),
+        tpl.render(context!(map => get_filtered_map(state.ini.get_map_ref())))
+            .unwrap(),
     );
 }
 
@@ -126,7 +116,9 @@ async fn api_list(State(state): State<Arc<HState>>) -> impl IntoResponse {
 }
 
 async fn opensearch(State(state): State<Arc<HState>>) -> impl IntoResponse {
-    let tpl = state.tpls.get_template("opensearch.xml")
+    let tpl = state
+        .tpls
+        .get_template("opensearch.xml")
         .expect("Failed to load the opensearch.xml template");
     return (
         StatusCode::OK,
@@ -142,40 +134,38 @@ async fn invalid() -> impl IntoResponse {
 /*
  * Utility functions
  */
-fn process_tpl_url(
-    cmd: &str,
-    map: &IniMap,
-    parts: &[&str],
-) -> Result<String> {
+fn process_tpl_url(cmd: &str, map: &IniMap, parts: &[&str]) -> Result<String> {
     let query = parts.join(" ");
 
     if !map[cmd].contains_key("url_tpl") {
         // We have a bad config if we get here because we *should* have
         // a "url_tpl" config
-        return Err(anyhow!(
-            format!("Invalid configuration, no url_tpl for {}", cmd)
-        ));
+        return Err(anyhow!(format!(
+            "Invalid configuration, no url_tpl for {}",
+            cmd
+        )));
     }
 
     let url_tpl = match &map[cmd]["url_tpl"] {
         Some(u) => u.to_string(),
         None => {
-            return Err(anyhow!(
-                format!("Invalid configuration, blank config for {}", cmd)
-            ));
-        },
+            return Err(anyhow!(format!(
+                "Invalid configuration, blank config for {}",
+                cmd
+            )));
+        }
     };
 
     if !url_tpl.contains("%s") {
-        return Err(anyhow!(
-            format!("Invalid template config for {}, no '%s'", cmd)
-        ));
+        return Err(anyhow!(format!(
+            "Invalid template config for {}, no '%s'",
+            cmd
+        )));
     }
 
     // Validation complete, let's process this sucker
     return Ok(url_tpl.replace("%s", &encode(&query)));
 }
-
 
 fn get_filtered_map(map: &IniMap) -> IniMap {
     let mut ret: IniMap = HashMap::new();
@@ -191,7 +181,6 @@ fn get_filtered_map(map: &IniMap) -> IniMap {
     return ret;
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -199,21 +188,21 @@ mod tests {
     fn get_test_map() -> IniMap {
         let mut map = HashMap::new();
         let google = HashMap::from([
-            ("url_fallback".to_string(),
-                Some("https://www.google.com".to_string())),
-            ("url_tpl".to_string(),
-                Some("https://www.google.com/search?q=%s".to_string())),
+            (
+                "url_fallback".to_string(),
+                Some("https://www.google.com".to_string()),
+            ),
+            (
+                "url_tpl".to_string(),
+                Some("https://www.google.com/search?q=%s".to_string()),
+            ),
         ]);
-        let bad_value1 = HashMap::from([
-            ("url_tpl".to_string(), None),
-        ]);
-        let bad_value2 = HashMap::from([
-            ("url".to_string(), Some("Irrelevant".to_string())),
-        ]);
-        let bad_value3 = HashMap::from([
-            ("url_tpl".to_string(),
-                Some("https://www.google.com/search?q=".to_string())),
-        ]);
+        let bad_value1 = HashMap::from([("url_tpl".to_string(), None)]);
+        let bad_value2 = HashMap::from([("url".to_string(), Some("Irrelevant".to_string()))]);
+        let bad_value3 = HashMap::from([(
+            "url_tpl".to_string(),
+            Some("https://www.google.com/search?q=".to_string()),
+        )]);
 
         map.insert("g".to_string(), google);
         map.insert("b1".to_string(), bad_value1);
@@ -232,7 +221,6 @@ mod tests {
             process_tpl_url("g", &map, &parts[..]).unwrap(),
             "https://www.google.com/search?q=lookup%20something",
         );
-
 
         assert!(process_tpl_url("b1", &map, &parts).is_err());
         assert!(process_tpl_url("b2", &map, &parts).is_err());
