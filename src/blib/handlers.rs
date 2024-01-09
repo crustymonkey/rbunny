@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use axum::{
-    extract::{Path, Query, State},
-    http::{StatusCode, HeaderMap, header},
+    extract::{Query, State},
+    http::{StatusCode, header},
     response::{Html, Json, IntoResponse, Redirect},
     routing::get,
     Router,

@@ -3,20 +3,13 @@
 
 mod blib;
 
-use anyhow::Result;
 use blib::handlers::get_routes;
 use chrono;
 use clap::Parser;
 use configparser::ini::Ini;
 use minijinja::{Environment, path_loader};
-use std::{
-    sync::Arc, borrow::Borrow,
-};
-use tokio::{
-    fs::{File, read_dir},
-    io::AsyncReadExt,
-    net::TcpListener,
-};
+use std::sync::Arc;
+use tokio::net::TcpListener;
 
 #[derive(Parser, Debug)]
 #[command(
