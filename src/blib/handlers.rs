@@ -187,6 +187,10 @@ mod tests {
 
     fn get_test_map() -> IniMap {
         let mut map = HashMap::new();
+        let main = HashMap::from([
+            ("bind_addr".to_string(), Some("127.0.0.1".to_string())),
+            ("tpl_dir".to_string(), Some("/etc/tpl".to_string())),
+        ]);
         let google = HashMap::from([
             (
                 "url_fallback".to_string(),
@@ -203,7 +207,7 @@ mod tests {
             "url_tpl".to_string(),
             Some("https://www.google.com/search?q=".to_string()),
         )]);
-
+        map.insert("main".to_string(), main);
         map.insert("g".to_string(), google);
         map.insert("b1".to_string(), bad_value1);
         map.insert("b2".to_string(), bad_value2);
@@ -225,5 +229,14 @@ mod tests {
         assert!(process_tpl_url("b1", &map, &parts).is_err());
         assert!(process_tpl_url("b2", &map, &parts).is_err());
         assert!(process_tpl_url("b3", &map, &parts).is_err());
+    }
+
+    #[test]
+    fn test_get_filtered_map() {
+        let map = get_test_map();
+
+        let filt = get_filtered_map(&map);
+        assert!(!filt.contains_key("main"));
+        assert!(filt.contains_key("g"));
     }
 }
