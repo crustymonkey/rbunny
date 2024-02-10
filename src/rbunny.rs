@@ -109,6 +109,11 @@ async fn main() {
 
     let router = get_routes(config.clone(), tpls.clone());
     let listener = get_listener(config.clone()).await;
+    info!(
+        "Starting the server on {}:{}",
+        config.get("main", "bind_addr").unwrap(),
+        config.getint("main", "bind_port").unwrap().unwrap(),
+    );
 
     axum::serve(listener, router).await.unwrap();
 }
