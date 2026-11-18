@@ -57,6 +57,8 @@ async fn search(Query(params): Query<Smap>, State(state): State<Arc<HState>>) ->
             return Redirect::temporary("/invalid");
         }
     };
+
+    debug!("The query passed in is: {:?}", query);
     let parts: Vec<&str> = query.trim().split(' ').collect();
     if parts.len() < 1 {
         warn!("Invalid request: there's no shortcut specified");
